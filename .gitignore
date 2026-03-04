@@ -1,0 +1,41 @@
+node_modules
+DJANGO ORIG SITE FILES only for reference/
+
+# Frontend build output
+frontend/dist/
+frontend/node_modules/
+
+# Database files
+*.sqlite
+*.sqlite3
+backend/database/*.sqlite
+database/*.sqlite
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

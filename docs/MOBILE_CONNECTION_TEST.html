@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Connection Test - Collective Souls</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a6fd8;
+            --success: #28a745;
+            --error: #dc3545;
+            --text: #333;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .card {
+            background: var(--card);
+            color: var(--text);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        h1 { margin-top: 0; color: var(--primary); }
+        h2 { color: var(--primary); font-size: 1.2rem; }
+        
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        
+        button:hover { background: var(--primary-dark); }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .metric {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+        
+        .metric-value { font-size: 18px; font-weight: bold; color: var(--primary); }
+        .metric-label { font-size: 12px; color: #666; }
+        
+        .api-url {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        
+        .network-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .network-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            font-size: 12px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>📱 Mobile Connection Test</h1>
+        <p>Test your connection to the Collective Souls backend server from your mobile device.</p>
+        
+        <div class="api-url">
+            <strong>API URL:</strong> <span id="apiUrl">http://192.168.4.24:3004</span>
+        </div>
+        
+        <div class="network-info">
+            <div class="network-item">
+                <strong>Device:</strong> <span id="deviceInfo">Unknown</span>
+            </div>
+            <div class="network-item">
+                <strong>Connection:</strong> <span id="connectionInfo">Unknown</span>
+            </div>
+            <div class="network-item">
+                <strong>Online:</strong> <span id="onlineStatus">Unknown</span>
+            </div>
+            <div class="network-item">
+                <strong>Browser:</strong> <span id="browserInfo">Unknown</span>
+            </div>
+        </div>
+        
+        <div class="grid">
+            <div class="metric">
+                <div class="metric-value" id="connectionStatus">❓</div>
+                <div class="metric-label">Connection</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="apiStatus">❓</div>
+                <div class="metric-label">API Status</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="corsStatus">❓</div>
+                <div class="metric-label">CORS</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="networkStatus">❓</div>
+                <div class="metric-label">Network</div>
+            </div>
+        </div>
+        
+        <div id="results"></div>
+        
+        <button onclick="testConnection()" id="testBtn">Test Connection</button>
+        <button onclick="testLogin()" id="loginBtn">Test Login</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://192.168.4.24:3004';
+        
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+        
+        function updateStatus(elementId, status, type) {
+            const el = document.getElementById(elementId);
+            el.textContent = status;
+            el.style.color = type === 'success' ? '#28a745' : (type === 'error' ? '#dc3545' : '#667eea');
+        }
+        
+        function updateDeviceInfo() {
+            // Device info
+            document.getElementById('deviceInfo').textContent = navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop';
+            
+            // Browser info
+            const browser = getBrowserInfo();
+            document.getElementById('browserInfo').textContent = browser;
+            
+            // Connection info
+            if ('connection' in navigator) {
+                const conn = navigator.connection;
+                const connectionType = conn.effectiveType || 'unknown';
+                const downlink = conn.downlink ? `${conn.downlink} Mbps` : 'unknown';
+                document.getElementById('connectionInfo').textContent = `${connectionType} (${downlink})`;
+            } else {
+                document.getElementById('connectionInfo').textContent = 'Not supported';
+            }
+            
+            // Online status
+            const isOnline = navigator.onLine;
+            const onlineEl = document.getElementById('onlineStatus');
+            onlineEl.textContent = isOnline ? 'Yes' : 'No';
+            onlineEl.style.color = isOnline ? '#28a745' : '#dc3545';
+        }
+        
+        function getBrowserInfo() {
+            const ua = navigator.userAgent;
+            if (ua.includes('Chrome')) return 'Chrome';
+            if (ua.includes('Firefox')) return 'Firefox';
+            if (ua.includes('Safari')) return 'Safari';
+            if (ua.includes('Edge')) return 'Edge';
+            return 'Unknown';
+        }
+        
+        async function testConnection() {
+            clearResults();
+            updateDeviceInfo();
+            
+            const testBtn = document.getElementById('testBtn');
+            testBtn.disabled = true;
+            testBtn.innerHTML = '<span class="loading"></span> Testing...';
+            
+            addResult('🔍 Testing connection to backend server...', 'info');
+            
+            try {
+                // Test basic connectivity
+                const response = await fetch(`${API_BASE_URL}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Server is reachable! Status: ${data.message}`, 'success');
+                    updateStatus('connectionStatus', '✅', 'success');
+                    updateStatus('apiStatus', '✅', 'success');
+                    
+                    // Test CORS
+                    addResult('🔍 Testing CORS configuration...', 'info');
+                    try {
+                        const corsTest = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer test-token'
+                            }
+                        });
+                        if (corsTest.status === 401) {
+                            addResult('✅ CORS is working correctly!', 'success');
+                            updateStatus('corsStatus', '✅', 'success');
+                        } else {
+                            addResult('⚠️ Unexpected response during CORS test', 'info');
+                        }
+                    } catch (corsError) {
+                        addResult(`❌ CORS test failed: ${corsError.message}`, 'error');
+                        updateStatus('corsStatus', '❌', 'error');
+                    }
+                    
+                } else {
+                    addResult(`❌ Server returned status: ${response.status}`, 'error');
+                    updateStatus('connectionStatus', '❌', 'error');
+                    updateStatus('apiStatus', '❌', 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Connection failed: ${error.message}`, 'error');
+                updateStatus('connectionStatus', '❌', 'error');
+                updateStatus('apiStatus', '❌', 'error');
+            }
+            
+            // Test network status
+            const isOnline = navigator.onLine;
+            updateStatus('networkStatus', isOnline ? '✅' : '❌', isOnline ? 'success' : 'error');
+            addResult(`🌐 Network status: ${isOnline ? 'Online' : 'Offline'}`, isOnline ? 'success' : 'error');
+            
+            testBtn.disabled = false;
+            testBtn.textContent = 'Test Connection';
+        }
+        
+        async function testLogin() {
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="loading"></span> Testing...';
+            
+            addResult('🔑 Testing login functionality...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'testuser',
+                        password: 'wrongpassword'
+                    })
+                });
+                
+                if (response.status === 401) {
+                    addResult('✅ Login endpoint is working (correctly rejected invalid credentials)', 'success');
+                } else if (response.status === 200) {
+                    addResult('⚠️ Unexpected success with invalid credentials', 'error');
+                } else {
+                    addResult(`❌ Login test failed with status: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Login test failed: ${error.message}`, 'error');
+            }
+            
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Test Login';
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            updateStatus('connectionStatus', '❓', 'info');
+            updateStatus('apiStatus', '❓', 'info');
+            updateStatus('corsStatus', '❓', 'info');
+            updateStatus('networkStatus', '❓', 'info');
+        }
+        
+        // Auto-test on load
+        window.onload = () => {
+            updateDeviceInfo();
+            setTimeout(testConnection, 1000);
+        };
+    </script>
+</body>
+</html>
