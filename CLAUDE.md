@@ -61,12 +61,17 @@ When ready to deploy to VPS:
 - `frontend/src/pages/*.tsx` - Page components (these are active)
 - `frontend/src/App.tsx` - Main app entry (this is active)
 
+## GITHUB
+- Repo address https://github.com/nwcai2025-cloud/Collective-Souls-node.js.git
+  
+
 ## Design Rules
 - **ALWAYS design for mobile first** - Start with mobile layout, then scale up to desktop
 - **DO NOT CHANGE THE MAIN SITE DESIGN** - Unless directed to by the user
 - The main site uses a spiritual theme with gradient backgrounds (mindful-purple → serene-blue → calm-green), glassmorphism effects, and yellow accents. Any redesigns should maintain this aesthetic.
 
 ## Things to Avoid
+- Don't change ports. CHECK FOR SERVERS RUNNING
 - Don't commit large binary files or node_modules
 - Don't push directly to protected branches without review
 - Avoid SQLite-specific SQL features that won't work in MySQL
