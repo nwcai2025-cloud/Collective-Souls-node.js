@@ -63,6 +63,60 @@ When ready to deploy to VPS:
 
 ## GITHUB
 - Repo address https://github.com/nwcai2025-cloud/Collective-Souls-node.js.git
+
+### Safe Commit and Push Procedures
+**IMPORTANT: To prevent repository corruption, follow these safety guidelines:**
+
+#### Pre-Commit Safety Measures
+1. **Verify file integrity** - Check that all files are readable and not corrupted locally
+2. **Small, focused commits** - Break large changes into smaller, manageable commits
+3. **Verify each step** - Check the repository state after each operation
+4. **Backup first** - Ensure you have local backups before pushing
+
+#### Recommended Commit Strategy
+1. **Phase 1: Backend Changes**
+   - Stage only backend files first
+   - Commit with descriptive message: "Backend: [specific changes]"
+   - Verify commit success before proceeding
+
+2. **Phase 2: Frontend Changes**
+   - Stage frontend files separately
+   - Commit with message: "Frontend: [specific changes]"
+   - Verify commit success
+
+3. **Phase 3: Configuration Files**
+   - Stage documentation and config files
+   - Commit with message: "Config: [specific changes]"
+   - Verify commit success
+
+4. **Phase 4: Push to GitHub**
+   - Push all commits to origin main
+   - Verify push success with git status
+
+#### Corruption Prevention Guidelines
+- **NEVER** push large binary files or node_modules
+- **ALWAYS** verify each commit before proceeding to the next
+- **USE** descriptive commit messages that explain the changes
+- **CHECK** git status after each operation
+- **MAINTAIN** local backups of important work
+- **AVOID** force pushes unless absolutely necessary
+- **VERIFY** remote repository state after pushing
+
+#### Recovery Procedures
+If corruption occurs:
+1. **STOP** all git operations immediately
+2. **CHECK** local backups for recovery
+3. **USE** `git reflog` to find previous good states
+4. **CONTACT** support if needed
+5. **REBUILD** from last known good backup
+
+#### Commit Message Format
+Use clear, descriptive messages:
+- "Backend: Add admin authentication and video call functionality"
+- "Frontend: Add video call UI and admin dashboard improvements"
+- "Config: Update project documentation and test files"
+
+**Last Safe Commit:** March 6, 2026 - Successfully pushed 3 commits with video call functionality and admin features using phased approach.
   
 
 ## Design Rules
