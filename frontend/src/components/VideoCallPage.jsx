@@ -96,10 +96,10 @@ const VideoCallPage = () => {
   const isGroupCall = urlParams.get('group') === 'true';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-mindful-purple via-purple-50 to-indigo-50">
+    <div className="min-h-screen bg-transparent">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-700 via-purple-600 to-violet-700 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="bg-white/10 backdrop-blur-md border-b border-white/20 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button 

@@ -10,15 +10,15 @@ export default defineConfig({
       cert: './ip-cert.pem'
     },
     port: 8080,
-    host: '192.168.4.24',
+    host: '192.168.4.35',
     proxy: {
       '/api': {
-        target: 'http://192.168.4.24:3004',
+        target: 'http://192.168.4.35:3004',
         changeOrigin: true,
         secure: false,
       },
       '/uploads': {
-        target: 'http://192.168.4.24:3004',
+        target: 'http://192.168.4.35:3004',
         changeOrigin: true,
         secure: false,
       },

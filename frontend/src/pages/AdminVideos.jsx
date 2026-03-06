@@ -184,7 +184,7 @@ const AdminVideos = () => {
 
     try {
       setIsActionLoading(true)
-      await adminAPI.deleteVideoRoom(room.id)
+      await adminAPI.deleteVideoRoom(room.room_id)
       toast.success('Video room deleted successfully')
       fetchRooms()
     } catch (err) {
@@ -201,7 +201,7 @@ const AdminVideos = () => {
 
     try {
       setIsActionLoading(true)
-      await adminAPI.updateVideoRoom(selectedRoom.id, editData)
+      await adminAPI.updateVideoRoom(selectedRoom.room_id, editData)
       toast.success('Video room updated successfully')
       setIsEditModalOpen(false)
       fetchRooms()
@@ -218,7 +218,17 @@ const AdminVideos = () => {
 
     try {
       setIsActionLoading(true)
-      await adminAPI.moderateVideoRoom(selectedRoom.id, action, reason)
+      // For now, we'll use the update function to change room status
+      // since we don't have a dedicated moderation endpoint
+      const updateData = {
+        room_name: selectedRoom.room_name,
+        description: selectedRoom.description || '',
+        max_participants: selectedRoom.max_participants,
+        is_private: selectedRoom.is_private, // Preserve current privacy setting
+        is_active: action === 'activate' || action === 'unlock'
+      }
+      
+      await adminAPI.updateVideoRoom(selectedRoom.room_id, updateData)
       toast.success(`Video room ${action}d successfully`)
       setIsModerationModalOpen(false)
       fetchRooms()
@@ -508,7 +518,7 @@ const AdminVideos = () => {
             ))
           ) : filteredRooms.length > 0 ? (
             filteredRooms.map((room) => (
-              <RoomCard key={room.id} room={room} />
+              <RoomCard key={`room-${room.room_id}`} room={room} />
             ))
           ) : (
             <div className="col-span-full bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
@@ -655,7 +665,7 @@ const AdminVideos = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-400 font-bold">Room ID</span>
-                          <span className="text-sm font-black text-gray-900">#{selectedRoom.id}</span>
+                          <span className="text-sm font-black text-gray-900">#{selectedRoom.room_id}</span>
                         </div>
                       </div>
                     </div>
@@ -775,7 +785,9 @@ const AdminVideos = () => {
                         <label className="flex items-center space-x-3 bg-gray-50 border border-gray-200 rounded-2xl p-4 cursor-pointer hover:bg-gray-100 transition-all">
                           <input
                             type="radio"
-                            checked={!editData.is_private}
+                            name="privacy"
+                            value="false"
+                            checked={editData.is_private === false}
                             onChange={() => setEditData({...editData, is_private: false})}
                             className="w-4 h-4 text-purple-600"
                           />
@@ -787,7 +799,9 @@ const AdminVideos = () => {
                         <label className="flex items-center space-x-3 bg-gray-50 border border-gray-200 rounded-2xl p-4 cursor-pointer hover:bg-gray-100 transition-all">
                           <input
                             type="radio"
-                            checked={editData.is_private}
+                            name="privacy"
+                            value="true"
+                            checked={editData.is_private === true}
                             onChange={() => setEditData({...editData, is_private: true})}
                             className="w-4 h-4 text-purple-600"
                           />

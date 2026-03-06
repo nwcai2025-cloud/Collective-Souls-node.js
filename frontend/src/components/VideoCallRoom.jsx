@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import VideoControls from './VideoControls';
 import VideoGrid from './VideoGrid';
 import io from 'socket.io-client';
+import '../styles/video-call.css';
 
 const VideoCallRoom = ({ roomId, userId, userName, token, onLeaveCall }) => {
   const [localStream, setLocalStream] = useState(null);
@@ -11,10 +12,30 @@ const VideoCallRoom = ({ roomId, userId, userName, token, onLeaveCall }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState(null);
   const [participants, setParticipants] = useState([]);
+  const [activeSpeaker, setActiveSpeaker] = useState(null);
+  const [isControlsVisible, setIsControlsVisible] = useState(true);
+  const [isParticipantsVisible, setIsParticipantsVisible] = useState(false);
+  const [isSettingsVisible, setIsSettingsVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   const localVideoRef = useRef(null);
   const peerConnections = useRef(new Map());
   const socketRef = useRef(null);
+  const controlsTimeoutRef = useRef(null);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+      const isSmallScreen = window.innerWidth < 768;
+      setIsMobile(isMobileDevice || isSmallScreen);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Initialize WebRTC
   useEffect(() => {
@@ -44,7 +65,7 @@ const VideoCallRoom = ({ roomId, userId, userName, token, onLeaveCall }) => {
         const socket = io('https://192.168.4.24:3005', {
           transports: ['websocket'],
           secure: true,
-          rejectUnauthorized: false, // Allow self-signed certificates for development
+          rejectUnauthorized: false,
           auth: {
             token: token
           }
@@ -52,7 +73,7 @@ const VideoCallRoom = ({ roomId, userId, userName, token, onLeaveCall }) => {
 
         socketRef.current = socket;
 
-        // Handle socket events first
+        // Handle socket events
         setupSocketEvents(socket);
 
         // Authenticate with the socket server
@@ -89,25 +110,25 @@ const VideoCallRoom = ({ roomId, userId, userName, token, onLeaveCall }) => {
         socketRef.current.disconnect();
       }
       peerConnections.current.forEach(pc => pc.close());
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
     };
   }, [roomId, userId, userName, token]);
 
   const setupSocketEvents = (socket) => {
-    // Handle room joined
     socket.on('room-joined', (data) => {
       console.log('Joined room:', data);
       setParticipants(data.participants || []);
       setIsConnecting(false);
     });
 
-    // Handle new participant
     socket.on('participant-joined', (data) => {
       console.log('Participant joined:', data);
       setParticipants(prev => [...prev, data.participant]);
       createPeerConnection(data.participant.userId, true);
     });
 
-    // Handle participant left
     socket.on('participant-left', (data) => {
       console.log('Participant left:', data);
       setParticipants(prev => prev.filter(p => p.userId !== data.userId));
@@ -123,12 +144,10 @@ const VideoCallRoom = ({ roomId, userId, userName, token, onLeaveCall }) => {
       });
     });
 
-    // Handle WebRTC signaling
     socket.on('webrtc-signal', (data) => {
       handleWebRTCSignal(data);
     });
 
-    // Handle connection errors
     socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error);
       if (error.message && error.message.includes('certificate')) {
@@ -209,7 +228,6 @@ const VideoCallRoom = ({ roomId, userId, userName, token, onLeaveCall }) => {
     const pc = peerConnections.current.get(fromUserId);
 
     if (!pc) {
-      // Create peer connection if doesn't exist
       await createPeerConnection(fromUserId, false);
       return;
     }
@@ -274,83 +292,150 @@ const VideoCallRoom = ({ roomId, userId, userName, token, onLeaveCall }) => {
     onLeaveCall();
   };
 
+  // Mobile touch interactions
+  const handleVideoTap = useCallback(() => {
+    if (isMobile) {
+      setIsControlsVisible(prev => !prev);
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+      if (!isControlsVisible) {
+        controlsTimeoutRef.current = setTimeout(() => {
+          setIsControlsVisible(false);
+        }, 3000);
+      }
+    }
+  }, [isMobile, isControlsVisible]);
+
+  const handleSwipeLeft = useCallback(() => {
+    if (!isMobile) return;
+    const participantIds = participants.map(p => p.userId);
+    if (participantIds.length > 0) {
+      const currentIndex = participantIds.indexOf(activeSpeaker);
+      const nextIndex = (currentIndex + 1) % participantIds.length;
+      setActiveSpeaker(participantIds[nextIndex]);
+    }
+  }, [participants, activeSpeaker, isMobile]);
+
+  const handleSwipeRight = useCallback(() => {
+    if (!isMobile) return;
+    const participantIds = participants.map(p => p.userId);
+    if (participantIds.length > 0) {
+      const currentIndex = participantIds.indexOf(activeSpeaker);
+      const prevIndex = (currentIndex - 1 + participantIds.length) % participantIds.length;
+      setActiveSpeaker(participantIds[prevIndex]);
+    }
+  }, [participants, activeSpeaker, isMobile]);
+
   return (
-    <div className="video-call-room min-h-screen bg-gradient-to-br from-mindful-purple via-serene-blue to-calm-green">
-      {/* Spiritual Header */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm"></div>
-        <div className="relative container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
-              <h1 className="text-2xl font-bold text-white">
-                🌟 Collective Souls Video Call
-              </h1>
-              <span className="text-yellow-300 font-medium">
-                Room: {roomId}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2 text-white">
-              <div className={`w-2 h-2 rounded-full ${isConnecting ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`}></div>
-              <span>{isConnecting ? 'Connecting...' : 'Connected'}</span>
-            </div>
+    <div 
+      className={`video-call-room ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
+      style={{
+        background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #22c55e 100%)',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        color: 'white'
+      }}
+    >
+      {/* Connection Status Bar */}
+      <div className="connection-status-bar">
+        <div className="status-content">
+          <div className="connection-indicator">
+            <div className={`status-dot ${isConnecting ? 'connecting' : 'connected'}`}></div>
+            <span>{isConnecting ? 'Connecting...' : 'Connected'}</span>
+          </div>
+          <div className="room-info">
+            <span className="room-id">Room: {roomId}</span>
+            <span className="participant-count">{participants.length + 1} participants</span>
           </div>
         </div>
       </div>
 
       {/* Main Video Area */}
-      <div className="container mx-auto px-4 py-6">
-        {error && (
-          <div className="mb-4 p-4 bg-red-500 bg-opacity-20 border border-red-400 rounded-lg">
-            <p className="text-red-300">{error}</p>
-          </div>
-        )}
+      <div 
+        className="video-area"
+        onClick={handleVideoTap}
+        onTouchStart={() => {
+          if (isMobile) {
+            setIsControlsVisible(true);
+            if (controlsTimeoutRef.current) {
+              clearTimeout(controlsTimeoutRef.current);
+            }
+            controlsTimeoutRef.current = setTimeout(() => {
+              setIsControlsVisible(false);
+            }, 3000);
+          }
+        }}
+      >
+        <VideoGrid 
+          remoteStreams={remoteStreams}
+          participants={participants}
+          localStream={localStream}
+          isVideoEnabled={isVideoEnabled}
+          isAudioEnabled={isAudioEnabled}
+          activeSpeaker={activeSpeaker}
+          onActiveSpeakerChange={setActiveSpeaker}
+          isMobile={isMobile}
+          userName={userName}
+        />
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Local Video */}
-          <div className="lg:col-span-1">
-            <div className="glass-card rounded-xl p-4">
-              <h3 className="text-white font-semibold mb-2">You</h3>
-              <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                <video
-                  ref={localVideoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="mt-2 flex justify-between items-center">
-                <span className="text-xs text-gray-300">
-                  {participants.length + 1} participants
-                </span>
-                <div className="flex space-x-2">
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                    isVideoEnabled ? 'bg-green-500' : 'bg-gray-500'
-                  }`}>
-                    📹 {isVideoEnabled ? 'ON' : 'OFF'}
-                  </span>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                    isAudioEnabled ? 'bg-green-500' : 'bg-gray-500'
-                  }`}>
-                    🎤 {isAudioEnabled ? 'ON' : 'OFF'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Mobile Controls */}
+      {isMobile && (
+        <div className={`mobile-controls ${isControlsVisible ? 'visible' : 'hidden'}`}>
+          <div className="control-buttons">
+            <button
+              onClick={toggleVideo}
+              className={`control-btn video-btn ${isVideoEnabled ? 'enabled' : 'disabled'}`}
+              aria-label={isVideoEnabled ? 'Turn off video' : 'Turn on video'}
+            >
+              <span className="btn-icon">{isVideoEnabled ? '📹' : '📷'}</span>
+              <span className="btn-label">Video</span>
+            </button>
 
-          {/* Remote Videos */}
-          <div className="lg:col-span-3">
-            <VideoGrid 
-              remoteStreams={remoteStreams}
-              participants={participants}
-            />
+            <button
+              onClick={toggleAudio}
+              className={`control-btn audio-btn ${isAudioEnabled ? 'enabled' : 'disabled'}`}
+              aria-label={isAudioEnabled ? 'Mute audio' : 'Unmute audio'}
+            >
+              <span className="btn-icon">{isAudioEnabled ? '🎤' : '🔇'}</span>
+              <span className="btn-label">Audio</span>
+            </button>
+
+            <button
+              onClick={() => setIsParticipantsVisible(!isParticipantsVisible)}
+              className="control-btn participants-btn"
+              aria-label="Show participants"
+            >
+              <span className="btn-icon">👥</span>
+              <span className="btn-label">People</span>
+            </button>
+
+            <button
+              onClick={() => setIsSettingsVisible(!isSettingsVisible)}
+              className="control-btn settings-btn"
+              aria-label="Settings"
+            >
+              <span className="btn-icon">⚙️</span>
+              <span className="btn-label">Settings</span>
+            </button>
+
+            <button
+              onClick={leaveCall}
+              className="control-btn leave-btn"
+              aria-label="Leave call"
+            >
+              <span className="btn-icon">📞</span>
+              <span className="btn-label">Leave</span>
+            </button>
           </div>
         </div>
+      )}
 
-        {/* Video Controls */}
-        <div className="mt-6">
+      {/* Desktop Controls */}
+      {!isMobile && (
+        <div className="desktop-controls">
           <VideoControls
             isVideoEnabled={isVideoEnabled}
             isAudioEnabled={isAudioEnabled}
@@ -359,77 +444,114 @@ const VideoCallRoom = ({ roomId, userId, userName, token, onLeaveCall }) => {
             onLeaveCall={leaveCall}
           />
         </div>
+      )}
 
-        {/* Mobile Controls - Touch-optimized floating controls */}
-        <div className="lg:hidden fixed bottom-4 left-4 right-4">
-          <div className="flex justify-center space-x-4">
-            <button
-              onClick={toggleVideo}
-              className={`p-4 rounded-full min-w-[60px] min-h-[60px] ${
-                isVideoEnabled 
-                  ? 'bg-green-500 bg-opacity-20 border border-green-400' 
-                  : 'bg-red-500 bg-opacity-20 border border-red-400'
-              } touch-manipulation`}
-              style={{
-                boxShadow: isVideoEnabled 
-                  ? '0 0 15px rgba(34, 197, 94, 0.3)' 
-                  : '0 0 15px rgba(239, 68, 68, 0.3)'
-              }}
-            >
-              <span className="text-2xl">{isVideoEnabled ? '📹' : '📷'}</span>
-            </button>
-            <button
-              onClick={toggleAudio}
-              className={`p-4 rounded-full min-w-[60px] min-h-[60px] ${
-                isAudioEnabled 
-                  ? 'bg-blue-500 bg-opacity-20 border border-blue-400' 
-                  : 'bg-red-500 bg-opacity-20 border border-red-400'
-              } touch-manipulation`}
-              style={{
-                boxShadow: isAudioEnabled 
-                  ? '0 0 15px rgba(59, 130, 246, 0.3)' 
-                  : '0 0 15px rgba(239, 68, 68, 0.3)'
-              }}
-            >
-              <span className="text-2xl">{isAudioEnabled ? '🎤' : '🔇'}</span>
-            </button>
-            <button
-              onClick={leaveCall}
-              className="p-4 rounded-full bg-red-500 bg-opacity-20 border border-red-400 min-w-[60px] min-h-[60px] touch-manipulation"
-              style={{
-                boxShadow: '0 0 15px rgba(239, 68, 68, 0.3)'
-              }}
-            >
-              <span className="text-2xl">📞</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Participants List */}
-        <div className="mt-6">
-          <div className="glass-card rounded-xl p-4">
-            <h3 className="text-white font-semibold mb-3">Participants</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-yellow-400 bg-opacity-20 rounded-full mx-auto mb-2 flex items-center justify-center">
-                  <span className="text-yellow-300 text-lg">👤</span>
+      {/* Participants Modal */}
+      {isParticipantsVisible && (
+        <div className="modal-overlay" onClick={() => setIsParticipantsVisible(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Participants</h3>
+              <button className="close-btn" onClick={() => setIsParticipantsVisible(false)}>✕</button>
+            </div>
+            <div className="participants-list">
+              {/* Current User */}
+              <div className="participant-item current-user">
+                <div className="avatar">{userName.charAt(0).toUpperCase()}</div>
+                <div className="user-info">
+                  <span className="name">{userName}</span>
+                  <span className="status">You</span>
                 </div>
-                <p className="text-xs text-gray-300 truncate">{userName}</p>
-                <span className="text-xs text-green-400">You</span>
+                <div className="status-indicators">
+                  <span className={`indicator ${isVideoEnabled ? 'video-on' : 'video-off'}`}>📹</span>
+                  <span className={`indicator ${isAudioEnabled ? 'audio-on' : 'audio-off'}`}>🎤</span>
+                </div>
               </div>
-              {participants.map(participant => (
-                <div key={participant.userId} className="text-center">
-                  <div className="w-12 h-12 bg-blue-400 bg-opacity-20 rounded-full mx-auto mb-2 flex items-center justify-center">
-                    <span className="text-blue-300 text-lg">👤</span>
+
+              {/* Other Participants */}
+              {participants.map(participant => {
+                const hasStream = remoteStreams.has(participant.userId);
+                return (
+                  <div key={participant.userId} className="participant-item">
+                    <div className="avatar">{participant.userName.charAt(0).toUpperCase()}</div>
+                    <div className="user-info">
+                      <span className="name">{participant.userName}</span>
+                      <span className="status">Connected</span>
+                    </div>
+                    <div className="status-indicators">
+                      <span className={`indicator ${hasStream ? 'live' : 'connecting'}`}>
+                        {hasStream ? '📹 Live' : '🔄 Connecting'}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-300 truncate">{participant.userName}</p>
-                  <span className="text-xs text-green-400">Connected</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Settings Modal */}
+      {isSettingsVisible && (
+        <div className="modal-overlay" onClick={() => setIsSettingsVisible(false)}>
+          <div className="modal-content settings-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Settings</h3>
+              <button className="close-btn" onClick={() => setIsSettingsVisible(false)}>✕</button>
+            </div>
+            <div className="settings-content">
+              <div className="setting-group">
+                <label>Video Quality</label>
+                <select>
+                  <option>Auto</option>
+                  <option>High</option>
+                  <option>Medium</option>
+                  <option>Low</option>
+                </select>
+              </div>
+              
+              <div className="setting-group">
+                <label>Audio Quality</label>
+                <select>
+                  <option>High</option>
+                  <option>Medium</option>
+                  <option>Low</option>
+                </select>
+              </div>
+
+              <div className="setting-group">
+                <label>Background Blur</label>
+                <button className="toggle-btn">Toggle</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Overlay */}
+      {error && (
+        <div className="error-overlay">
+          <div className="error-content">
+            <div className="error-icon">⚠️</div>
+            <h3>Connection Error</h3>
+            <p>{error}</p>
+            <div className="error-actions">
+              <button onClick={() => setError(null)} className="btn-secondary">Try Again</button>
+              <button onClick={leaveCall} className="btn-primary">Leave Call</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {isConnecting && (
+        <div className="loading-overlay">
+          <div className="loading-content">
+            <div className="spinner"></div>
+            <p>Connecting to video call...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

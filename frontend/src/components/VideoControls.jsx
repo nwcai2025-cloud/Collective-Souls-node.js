@@ -8,78 +8,45 @@ const VideoControls = ({
   onLeaveCall 
 }) => {
   return (
-    <div className="glass-card rounded-xl p-4">
-      <div className="flex items-center justify-center space-x-4">
-        {/* Video Toggle */}
+    <div 
+      className="desktop-video-controls"
+      style={{
+        background: 'rgba(0, 0, 0, 0.8)',
+        backdropFilter: 'blur(10px)',
+        padding: '15px 20px',
+        borderRadius: '30px',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        display: 'flex',
+        justifyContent: 'center'
+      }}
+    >
+      <div className="control-group">
         <button
           onClick={onToggleVideo}
-          className={`p-4 rounded-full transition-all duration-300 transform hover:scale-110 ${
-            isVideoEnabled 
-              ? 'bg-green-500 bg-opacity-20 border border-green-400 hover:bg-green-500 hover:bg-opacity-40' 
-              : 'bg-red-500 bg-opacity-20 border border-red-400 hover:bg-red-500 hover:bg-opacity-40'
-          }`}
-          style={{
-            boxShadow: isVideoEnabled 
-              ? '0 0 15px rgba(34, 197, 94, 0.3)' 
-              : '0 0 15px rgba(239, 68, 68, 0.3)'
-          }}
+          className={`control-btn video-btn ${isVideoEnabled ? 'enabled' : 'disabled'}`}
+          aria-label={isVideoEnabled ? 'Turn off video' : 'Turn on video'}
         >
-          <div className="text-center">
-            <div className="text-2xl mb-1">
-              {isVideoEnabled ? '📹' : '📷'}
-            </div>
-            <div className="text-xs text-gray-300 font-medium">
-              Video {isVideoEnabled ? 'ON' : 'OFF'}
-            </div>
-          </div>
+          <span className="btn-icon">{isVideoEnabled ? '📹' : '📷'}</span>
+          <span className="btn-label">Video</span>
         </button>
 
-        {/* Audio Toggle */}
         <button
           onClick={onToggleAudio}
-          className={`p-4 rounded-full transition-all duration-300 transform hover:scale-110 ${
-            isAudioEnabled 
-              ? 'bg-blue-500 bg-opacity-20 border border-blue-400 hover:bg-blue-500 hover:bg-opacity-40' 
-              : 'bg-red-500 bg-opacity-20 border border-red-400 hover:bg-red-500 hover:bg-opacity-40'
-          }`}
-          style={{
-            boxShadow: isAudioEnabled 
-              ? '0 0 15px rgba(59, 130, 246, 0.3)' 
-              : '0 0 15px rgba(239, 68, 68, 0.3)'
-          }}
+          className={`control-btn audio-btn ${isAudioEnabled ? 'enabled' : 'disabled'}`}
+          aria-label={isAudioEnabled ? 'Mute audio' : 'Unmute audio'}
         >
-          <div className="text-center">
-            <div className="text-2xl mb-1">
-              {isAudioEnabled ? '🎤' : '🔇'}
-            </div>
-            <div className="text-xs text-gray-300 font-medium">
-              Audio {isAudioEnabled ? 'ON' : 'OFF'}
-            </div>
-          </div>
+          <span className="btn-icon">{isAudioEnabled ? '🎤' : '🔇'}</span>
+          <span className="btn-label">Audio</span>
         </button>
 
-        {/* Leave Call */}
         <button
           onClick={onLeaveCall}
-          className="p-4 rounded-full bg-red-500 bg-opacity-20 border border-red-400 hover:bg-red-500 hover:bg-opacity-40 transition-all duration-300 transform hover:scale-110"
-          style={{
-            boxShadow: '0 0 15px rgba(239, 68, 68, 0.3)'
-          }}
+          className="control-btn leave-btn"
+          aria-label="Leave call"
         >
-          <div className="text-center">
-            <div className="text-2xl mb-1">📞</div>
-            <div className="text-xs text-gray-300 font-medium">End Call</div>
-          </div>
+          <span className="btn-icon">📞</span>
+          <span className="btn-label">Leave</span>
         </button>
-      </div>
-
-      {/* Mobile-friendly touch indicators */}
-      <div className="mt-4 text-center text-xs text-gray-400">
-        <div className="flex justify-center space-x-4 text-xs">
-          <span>👆 Tap to toggle</span>
-          <span>📱 Touch-friendly</span>
-          <span>🌟 Spiritual design</span>
-        </div>
       </div>
     </div>
   );

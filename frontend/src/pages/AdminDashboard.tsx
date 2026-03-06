@@ -799,24 +799,20 @@ const AdminDashboard: React.FC = () => {
                       >
                         <UserPlus className="w-4 h-4" />
                       </button>
-                      {!u.isAdmin && (
-                        <>
-                          <button 
-                            onClick={() => handleSuspendUser(u.id, u.isActive)}
-                            className={`p-2 rounded-lg transition-all ${u.isActive ? 'text-red-600 hover:bg-red-50' : 'text-green-600 hover:bg-green-50'}`}
-                            disabled={isActionLoading}
-                          >
-                            {u.isActive ? <Ban className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteUser(u.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                            disabled={isActionLoading}
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </button>
-                        </>
-                      )}
+                      <button 
+                        onClick={() => handleSuspendUser(u.id, u.isActive)}
+                        className={`p-2 rounded-lg transition-all ${u.isActive ? 'text-red-600 hover:bg-red-50' : 'text-green-600 hover:bg-green-50'}`}
+                        disabled={isActionLoading}
+                      >
+                        {u.isActive ? <Ban className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteUser(u.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        disabled={isActionLoading}
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-[10px]">
@@ -917,26 +913,22 @@ const AdminDashboard: React.FC = () => {
                           >
                             <UserPlus className="w-5 h-5" />
                           </button>
-                          {!u.isAdmin && (
-                            <>
-                              <button 
-                                onClick={() => handleSuspendUser(u.id, u.isActive)}
-                                className={`p-2.5 rounded-xl transition-all border border-transparent ${u.isActive ? 'text-red-600 hover:bg-red-50 hover:border-red-100' : 'text-green-600 hover:bg-green-50 hover:border-green-100'}`}
-                                title={u.isActive ? 'Suspend User' : 'Reactivate User'}
-                                disabled={isActionLoading}
-                              >
-                                {u.isActive ? <Ban className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteUser(u.id)}
-                                className="p-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                                title="Delete User Permanently"
-                                disabled={isActionLoading}
-                              >
-                                <XCircle className="w-5 h-5" />
-                              </button>
-                            </>
-                          )}
+                          <button 
+                            onClick={() => handleSuspendUser(u.id, u.isActive)}
+                            className={`p-2.5 rounded-xl transition-all border border-transparent ${u.isActive ? 'text-red-600 hover:bg-red-50 hover:border-red-100' : 'text-green-600 hover:bg-green-50 hover:border-green-100'}`}
+                            title={u.isActive ? 'Suspend User' : 'Reactivate User'}
+                            disabled={isActionLoading}
+                          >
+                            {u.isActive ? <Ban className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteUser(u.id)}
+                            className="p-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
+                            title="Delete User Permanently"
+                            disabled={isActionLoading}
+                          >
+                            <XCircle className="w-5 h-5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
