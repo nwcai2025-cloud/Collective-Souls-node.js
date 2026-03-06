@@ -254,11 +254,95 @@ const authenticateSocket = async (token) => {
   }
 };
 
+// Admin action logging function
+const logAdminAction = async (adminUserId, action, resourceType, resourceId, oldValues, newValues, req) => {
+  try {
+    const AdminAuditLog = require('../models').AdminAuditLog;
+    
+    // Create safe log data without circular references
+    const logData = {
+      admin_user_id: adminUserId,
+      action,
+      resource_type: resourceType,
+      resource_id: resourceId,
+      old_values: oldValues ? JSON.stringify(oldValues) : null,
+      new_values: newValues ? JSON.stringify(newValues) : null,
+      ip_address: req.ip || req.connection.remoteAddress,
+      user_agent: req.get('User-Agent'),
+      request_data: req.body ? JSON.stringify(req.body) : null
+    };
+
+    await AdminAuditLog.create(logData);
+    console.log(`✅ Admin action logged: ${action} on ${resourceType}:${resourceId}`);
+  } catch (error) {
+    console.error('❌ Failed to log admin action:', error);
+  }
+};
+
+// Create admin notification function
+const createAdminNotification = async (adminUserId, type, message, link = null) => {
+  try {
+    const AdminNotification = require('../models').AdminNotification;
+    
+    const notification = await AdminNotification.create({
+      admin_user_id: adminUserId,
+      type,
+      message,
+      link,
+      is_read: false
+    });
+
+    console.log(`✅ Admin notification created for user ${adminUserId}: ${type}`);
+    return notification;
+  } catch (error) {
+    console.error('❌ Failed to create admin notification:', error);
+    throw error;
+  }
+};
+
+// Broadcast admin notification function
+const broadcastAdminNotification = async (type, message, link = null) => {
+  try {
+    const AdminNotification = require('../models').AdminNotification;
+    const AdminUser = require('../models').AdminUser;
+    
+    // Get all active admin users
+    const adminUsers = await AdminUser.findAll({
+      where: { is_active: true },
+      include: [{
+        model: require('../models').User,
+        as: 'user',
+        attributes: ['id']
+      }]
+    });
+
+    // Create notifications for all admin users
+    const notifications = adminUsers.map(adminUser => ({
+      admin_user_id: adminUser.user_id,
+      type,
+      message,
+      link,
+      is_read: false
+    }));
+
+    if (notifications.length > 0) {
+      await AdminNotification.bulkCreate(notifications);
+      console.log(`✅ Broadcast notification to ${notifications.length} admin users: ${type}`);
+    }
+  } catch (error) {
+    console.error('❌ Failed to broadcast admin notification:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   authenticateToken,
   optionalAuth,
   requireAdmin,
   requirePermission,
   checkOwnershipOrAdmin,
-  authenticateSocket
+  authenticateSocket,
+  logAdminAction,
+  createAdminNotification,
+  broadcastAdminNotification
 };

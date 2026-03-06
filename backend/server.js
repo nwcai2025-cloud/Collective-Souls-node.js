@@ -174,8 +174,41 @@ app.use(compression());
 
 // app.use('/api/', limiter);
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb', strict: false }));
+// Body parsing middleware - Enhanced debug logging
+app.use((req, res, next) => {
+  console.log('🔍 Request received:', req.method, req.path);
+  console.log('📋 Content-Type:', req.headers['content-type']);
+  console.log('📏 Content-Length:', req.headers['content-length']);
+  
+  // Log raw request body if available
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log('📄 Request body (pre-parse):', req.body);
+  }
+  
+  next();
+});
+
+// Enhanced JSON parsing with debug logging
+app.use(express.json({ 
+  limit: '10mb', 
+  strict: false,
+  verify: (req, res, buf, encoding) => {
+    console.log('🔍 JSON parsing - Buffer length:', buf.length);
+    console.log('🔍 JSON parsing - Buffer content:', buf.toString());
+    console.log('🔍 JSON parsing - Buffer hex:', buf.toString('hex'));
+    console.log('🔍 JSON parsing - Encoding:', encoding);
+    
+    // Try to parse the buffer to see if it's valid JSON
+    try {
+      const parsed = JSON.parse(buf.toString());
+      console.log('✅ JSON parsing - Successfully parsed:', parsed);
+    } catch (parseError) {
+      console.log('❌ JSON parsing - Parse error:', parseError.message);
+      console.log('❌ JSON parsing - Buffer content for debugging:', buf.toString());
+    }
+  }
+}));
+
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve static files

@@ -933,14 +933,19 @@ router.delete('/content/chat-messages/:id', authenticateToken, requirePermission
 });
 
 // Content Reports Routes
+
+// GET /admin/reports - Get all reports with pagination and filtering
 router.get('/reports', authenticateToken, requirePermission('reports', 'read'), async (req, res) => {
   try {
-    const { page = 1, limit = 10, status } = req.query;
+    const { page = 1, limit = 10, status, type } = req.query;
     const offset = (page - 1) * limit;
 
     const where = {};
-    if (status) {
+    if (status && status !== 'all') {
       where.status = status;
+    }
+    if (type && type !== 'all') {
+      where.reported_type = type;
     }
 
     const reports = await ContentReport.findAndCountAll({
@@ -951,7 +956,7 @@ router.get('/reports', authenticateToken, requirePermission('reports', 'read'), 
       include: [{
         model: User,
         as: 'reporter',
-        attributes: ['id', 'username']
+        attributes: ['id', 'username', 'email']
       }]
     });
 
@@ -969,6 +974,163 @@ router.get('/reports', authenticateToken, requirePermission('reports', 'read'), 
     res.status(500).json({
       success: false,
       message: 'Failed to fetch reports'
+    });
+  }
+});
+
+// GET /admin/reports/:id - Get detailed report with associated content
+router.get('/reports/:id', authenticateToken, requirePermission('reports', 'read'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const report = await ContentReport.findByPk(id, {
+      include: [{
+        model: User,
+        as: 'reporter',
+        attributes: ['id', 'username', 'email']
+      }, {
+        model: AdminUser,
+        as: 'reviewer',
+        include: [{
+          model: User,
+          as: 'user',
+          attributes: ['username']
+        }]
+      }]
+    });
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Report not found'
+      });
+    }
+
+    // Get the reported content based on type
+    let reportedContent = null;
+
+    switch (report.reported_type) {
+      case 'comment':
+        reportedContent = await Comment.findByPk(report.reported_id, {
+          include: [{
+            model: User,
+            as: 'author',
+            attributes: ['id', 'username']
+          }]
+        });
+        break;
+      case 'activity':
+        reportedContent = await ActivityFeed.findByPk(report.reported_id, {
+          include: [{
+            model: User,
+            as: 'user',
+            attributes: ['id', 'username']
+          }]
+        });
+        break;
+      case 'user':
+        reportedContent = await User.findByPk(report.reported_id, {
+          attributes: ['id', 'username', 'email', 'first_name', 'last_name']
+        });
+        break;
+      case 'video':
+        // For video content, we might need to check a different table
+        // For now, just return the ID
+        reportedContent = {
+          id: report.reported_id,
+          type: 'video',
+          message: 'Video content details would be fetched from video rooms table'
+        };
+        break;
+      case 'chat_message':
+        reportedContent = await ChatMessage.findByPk(report.reported_id, {
+          include: [{
+            model: User,
+            as: 'sender',
+            attributes: ['id', 'username']
+          }]
+        });
+        break;
+      default:
+        reportedContent = {
+          id: report.reported_id,
+          type: report.reported_type,
+          message: 'Content type not supported for detailed view'
+        };
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...report.toJSON(),
+        reported_content: reportedContent
+      }
+    });
+  } catch (error) {
+    console.error('Get report details error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch report details'
+    });
+  }
+});
+
+// PUT /admin/reports/:id - Review and update report status
+router.put('/reports/:id', authenticateToken, requirePermission('reports', 'update'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, resolution_notes } = req.body;
+
+    if (!status || !['pending', 'reviewed', 'resolved', 'dismissed'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be one of: pending, reviewed, resolved, dismissed'
+      });
+    }
+
+    const report = await ContentReport.findByPk(id);
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Report not found'
+      });
+    }
+
+    const oldValues = report.toJSON();
+    
+    // Update report
+    await report.update({
+      status,
+      reviewed_by: req.user.id,
+      reviewed_at: new Date(),
+      resolution_notes: resolution_notes || null
+    });
+
+    const newValues = report.toJSON();
+
+    // Log the action
+    await logAdminAction(req.user.id, 'review', 'content_report', id, oldValues, newValues, req);
+
+    // Create notification for the reporter if the report was resolved or dismissed
+    if (status === 'resolved' || status === 'dismissed') {
+      await createAdminNotification(
+        report.reporter_id,
+        'report_resolved',
+        `Your report about ${report.reported_type} has been ${status}`,
+        `/admin/reports/${id}`
+      );
+    }
+
+    res.json({
+      success: true,
+      message: `Report ${status} successfully`,
+      data: report
+    });
+  } catch (error) {
+    console.error('Update report error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update report'
     });
   }
 });
