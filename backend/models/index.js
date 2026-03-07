@@ -13,6 +13,7 @@ const UserMute = require('./UserMute');
 const Journal = require('./Journal');
 const VideoRoom = require('./VideoRoom');
 const FeatureFlag = require('./FeatureFlag');
+const Donation = require('./Donation');
 
 // Create models object for associations
 const models = {
@@ -40,7 +41,8 @@ const models = {
   UserMute,
   Journal,
   VideoRoom,
-  FeatureFlag
+  FeatureFlag,
+  Donation
 };
 
 // Set up model associations
@@ -75,5 +77,6 @@ module.exports = {
   UserMute,
   Journal,
   VideoRoom,
-  FeatureFlag
+  FeatureFlag,
+  Donation
 };

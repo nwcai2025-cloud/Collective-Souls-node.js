@@ -11,6 +11,7 @@ const https = require('https');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config({ path: __dirname + '/.env' });
+// Test comment for Source Control verification - March 6, 2026
 
 console.log('🔍 JWT_SECRET from environment:', process.env.JWT_SECRET ? 'Found' : 'Not found');
 console.log('🔍 JWT_SECRET value:', process.env.JWT_SECRET);
@@ -37,6 +38,8 @@ const postRoutes = require('./routes/posts');
 const notificationRoutes = require('./routes/notifications');
 const journalRoutes = require('./routes/journals');
 const videoRoutes = require('./routes/video');
+const donationRoutes = require('./routes/donations');
+const paymentGatewayService = require('./services/paymentGatewayService');
 
 // Import middleware
 const { authenticateToken } = require('./middleware/auth');
@@ -242,6 +245,7 @@ app.use('/api/posts', authenticateToken, postRoutes);
 app.use('/api/notifications', authenticateToken, notificationRoutes);
 app.use('/api/journals', authenticateToken, journalRoutes);
 app.use('/api/video', authenticateToken, videoRoutes);
+app.use('/api/donations', donationRoutes);
 
 // Socket.IO setup
 setupSocketIO(io);
@@ -362,6 +366,7 @@ process.on('SIGINT', () => {
     process.exit(0);
   });
 });
+
 
 // Start the server
 startServer();

@@ -717,6 +717,13 @@ const AdminDashboard: React.FC = () => {
                 onClick={() => navigate('/admin/logs')}
                 color="gray"
               />
+              <QuickActionCard
+                title="Donation Management"
+                description="View and manage donation records"
+                icon={Globe}
+                onClick={() => navigate('/admin/donations')}
+                color="yellow"
+              />
             </div>
           </>
         ) : activeView === 'users' ? (

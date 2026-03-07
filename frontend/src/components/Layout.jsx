@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useSocket } from '../context/SocketContext'
 import NotificationBell from './NotificationBell'
+import DonateButton from './DonateButton'
 
 const Layout = ({ children }) => {
   const { user, logout } = useAuth()
@@ -106,6 +107,7 @@ const Layout = ({ children }) => {
                 )}
                 <Link to="/dashboard" className="btn-spiritual px-4 py-2">Dashboard</Link>
                 <Link to={`/profile/${user?.username}`} className="btn-spiritual px-4 py-2">Profile</Link>
+                <DonateButton />
                 <NotificationBell />
                 <button onClick={handleLogout} className="btn-spiritual px-4 py-2 whitespace-nowrap">Logout</button>
               </>
@@ -143,6 +145,7 @@ const Layout = ({ children }) => {
                     )}
                     <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="text-white whitespace-nowrap hover:text-gray-200 py-1.5 px-3 rounded-full border border-white/20 text-sm transition-colors">Dashboard</Link>
                     <Link to={`/profile/${user?.username}`} onClick={() => setIsMenuOpen(false)} className="text-white whitespace-nowrap hover:text-gray-200 py-1.5 px-3 rounded-full border border-white/20 text-sm transition-colors">Profile</Link>
+                    <DonateButton />
                     <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="text-white whitespace-nowrap hover:text-gray-200 py-1.5 px-3 rounded-full border border-white/20 text-sm transition-colors">Logout</button>
                   </>
                 ) : (

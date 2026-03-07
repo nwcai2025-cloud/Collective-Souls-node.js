@@ -19,6 +19,7 @@ import AdminLogin from './pages/AdminLogin'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminTest from './pages/AdminTest'
 import AdminVideos from './pages/AdminVideos'
+import AdminDonationDashboard from './pages/AdminDonationDashboard'
 import VideoLobby from './pages/VideoLobby'
 import VideoCallPage from './components/VideoCallPage'
 
@@ -211,6 +212,13 @@ function AppContent() {
           <AdminProtectedRoute>
             <Layout>
               <AdminVideos />
+            </Layout>
+          </AdminProtectedRoute>
+        } />
+        <Route path="/admin/donations" element={
+          <AdminProtectedRoute>
+            <Layout>
+              <AdminDonationDashboard />
             </Layout>
           </AdminProtectedRoute>
         } />

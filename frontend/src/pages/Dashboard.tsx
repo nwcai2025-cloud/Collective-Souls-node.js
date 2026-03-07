@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useSocket } from '../context/SocketContext'
 import { fetchStats } from '../services/statsService'
 import CommunityWall from '../components/CommunityWall'
+import DonateButton from '../components/DonateButton'
 import { 
   Users, 
   MessageCircle, 
@@ -362,6 +363,7 @@ const Dashboard: React.FC = () => {
                 <Plus className="w-5 h-5 text-mindful-purple" />
                 <span className="text-mindful-purple font-medium">Add Connection</span>
               </Link>
+              <DonateButton />
               <Link to="/chat" className="w-full flex items-center space-x-3 px-4 py-3 text-left bg-serene-blue bg-opacity-10 rounded-lg hover:bg-opacity-20 transition-colors">
                 <MessageCircle className="w-5 h-5 text-serene-blue" />
                 <span className="text-serene-blue font-medium">Send Message</span>
